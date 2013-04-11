@@ -1,8 +1,15 @@
 <html>
 <head>
 	<title>{{titulo}}</title>
+	<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+	<script src="http://localhost:3000/socket.io/socket.io.js"></script>
+	<script src="main.js" type="text/javascript"></script>
 </head>
 <body>
 	<h1>Chat</h1>
+	<input type="text" id="message">
+	<p><button id="enviarMensaje">Enviar Mensaje</button></p>
+	<br/>
+	<p><textarea id="mensajes"></textarea></p>
 </body>
 </html>

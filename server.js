@@ -26,4 +26,10 @@ app.get('/', function (req, res) {
 	});
 });
 
+io.sockets.on('connection', function (socket) {
+	socket.on('eventoEnviarMensaje', function (data) {
+		socket.emit('respuestaServer', data + " --> Server");
+	});
+});
+
 server.listen(3000);
