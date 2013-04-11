@@ -7,9 +7,20 @@
 </head>
 <body>
 	<h1>Chat</h1>
-	<input type="text" id="message">
-	<p><button id="enviarMensaje">Enviar Mensaje</button></p>
+	Nick: <input type="text" id="nick">
 	<br/>
-	<p><textarea id="mensajes"></textarea></p>
+	Enviar: <button id="conectar">Conectar</button>
+	<br/>
+	<br/>
+	Mensaje: <input type="text" id="message">
+	<br/>
+	Enviar Publico: <p><button id="enviarMensajePublico">Enviar Mensaje Publico</button></p>
+	<br/>
+	Enviar Privado: <p><button id="enviarMensajePrivado">Enviar Mensaje Privado</button></p>
+	<br/>
+	<br/>
+	Mensaje: <p><select id="mensajes" multiple="multiple" size="10" style="width: 200px;"></select></p>
+	<br/>
+	Usuarios: <p><select id="usuarios" multiple="multiple" size="10" style="width: 200px;"></select></p>
 </body>
 </html>
