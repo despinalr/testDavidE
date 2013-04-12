@@ -26,7 +26,7 @@ function inicializarEventos() {
 	//Enviar Mensaje Privado al Server
     $("#enviarMensajePrivado").click(function() {
     	var selectedUser = $('#usuarios :selected').val();
-		socket.emit('eventoEnviarMensajePrivado', {
+    	socket.emit('eventoEnviarMensajePrivado', {
 			message: $("#message").val(),
 			idSocket: selectedUser
 		});
@@ -35,6 +35,11 @@ function inicializarEventos() {
 	//Recibe Mensaje del Server
 	socket.on('respuestaServer', function (data) {
 		$("#mensajes").append('<option>' + data + '</option>');
+	});
+
+	//Event Unload Page
+	$(window).unload(function() {
+		socket.emit("forceDisconnect");
 	});
 }
 
