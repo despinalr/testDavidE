@@ -14,13 +14,15 @@ swig.init({
 
 app.configure(function(){
 	app.use(express.bodyParser());
-	app.use( express.cookieParser() );
+	app.use(express.cookieParser());
 });
 
+//Registra Contenido Estático y Vistas
 app.engine('.html', cons.swig);
 app.set('view engine', 'html');
 app.use(express.static('./public'));
 
+//Carga Página de Inicio
 app.get('/', function (req, res) {
 	res.render('index', {
 		titulo : 'Ejemplo'
@@ -57,14 +59,24 @@ io.sockets.on('connection', function (socket) {
 		io.sockets.emit('nicks', users);
 	});
 
-	//Disconnect
+	//Force Disconnect
 	socket.on('forceDisconnect', function() {
 		socket.disconnect();
 	});
 
 	//Disconnect
-	socket.on('disconnect', function(){
+	socket.on('disconnect', function() {
 		delete connectedSockets[socket.id];
+		var auxUsers = users, index = 0;
+		auxUsers.forEach(function(user) {
+			if(user.idSocket == socket.id) {
+				users.splice(index, 1);
+			}
+
+			index++;
+		});
+
+		io.sockets.emit('nicks', users);
 	});
 });
 
