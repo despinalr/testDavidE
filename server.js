@@ -72,7 +72,6 @@ io.sockets.on('connection', function (socket) {
 			if(user.idSocket == socket.id) {
 				users.splice(index, 1);
 			}
-
 			index++;
 		});
 
