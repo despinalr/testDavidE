@@ -15,19 +15,33 @@ swig.init({
 app.configure(function(){
 	app.use(express.bodyParser());
 	app.use(express.cookieParser());
+
+	app.use(express.session({ secret: 'example' }));
+	app.use(checkAuthentication);
+	app.use(app.router);
+
+	//Registra Contenido Estático y Vistas
+	app.engine('.html', cons.swig);
+	app.set('view engine', 'html');
+	app.use(express.static('./public'));
 });
 
-//Registra Contenido Estático y Vistas
-app.engine('.html', cons.swig);
-app.set('view engine', 'html');
-app.use(express.static('./public'));
+require('./public/routes.js')(app);
 
-//Carga Página de Inicio
-app.get('/', function (req, res) {
-	res.render('index', {
-		titulo : 'Ejemplo'
-	});
-});
+//Verify Authentication
+function checkAuthentication (req, res, next) {
+
+	if (req.url !== '/login' && (!req.session || !req.session.authenticated)) {
+		/*res.render('login', {
+			titulo : 'Ingreso'
+		});*/
+		res.redirect('/login');
+
+		return;
+	}
+	 
+	next();
+}
 
 io.sockets.on('connection', function (socket) {
 
