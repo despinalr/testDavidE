@@ -12,14 +12,16 @@ $(document).on("ready", function() {
     	//Connected
     	socket.on('connect', function() { 
 
-    		//Send NickName
-    		socket.emit("nick", $("#nick").val());
+    		//Registrar Usuario
+    		socket.on('login', function () {
+    			socket.emit("login", $("#nick").val());
+			});
 
     		//Recibe Usuarios Conectados
 			socket.on('nicks', function (nicks) {
 				$("#usuarios").empty();
 				for (var i = 0; i < nicks.length; i++) {
-					$("#usuarios").append('<option value="' + nicks[i].idSocket + '">' + nicks[i].userName + '</option>');
+					$("#usuarios").append('<option>' + nicks[i] + '</option>');
 		      	}
 			});
 
@@ -31,10 +33,15 @@ $(document).on("ready", function() {
 			//Enviar Mensaje Privado al Server
 		    $("#enviarMensajePrivado").click(function() {
 		    	var selectedUser = $('#usuarios :selected').val();
-		    	socket.emit('eventoEnviarMensajePrivado', {
-					message: $("#message").val(),
-					idSocket: selectedUser
-				});
+
+		    	if(selectedUser) {
+			    	socket.emit('eventoEnviarMensajePrivado', {
+						message: $("#message").val(),
+						username: selectedUser
+					});
+		    	}
+		    	else
+		    		alert('Escoja un usuario Destino!!!');
 			});
 
 			//Recibe Mensaje del Server

@@ -5,9 +5,6 @@ var io      = require('socket.io').listen(server);
 var swig    = require('swig');
 var cons    = require('consolidate');
 
-var connectedSockets = [];
-var users = [];
-
 swig.init({
 	cache : false
 });
@@ -32,11 +29,7 @@ require('./public/routes.js')(app);
 function checkAuthentication (req, res, next) {
 
 	if (req.url !== '/login' && (!req.session || !req.session.authenticated)) {
-		/*res.render('login', {
-			titulo : 'Ingreso'
-		});*/
 		res.redirect('/login');
-
 		return;
 	}
 	 
@@ -45,32 +38,42 @@ function checkAuthentication (req, res, next) {
 
 io.sockets.on('connection', function (socket) {
 
-	//Registra Sockets
-	connectedSockets[socket.id] = {};
-	connectedSockets[socket.id].socket = socket;
+	//Emite evento que alguien se conectó
+	socket.emit('login');
 
 	//Envia Todos los Usuarios Conectados
-	socket.emit('nicks', connectedSockets);
+	socket.emit('nicks', getConnectedUsers());
 
 	//Mensaje Público: Recibe Mensaje del Cliente y lo Envia a todos los Sockets
 	socket.on('eventoEnviarMensajePublico', function (data) {
 		io.sockets.emit('respuestaServer', data);
 	});
 
-	//Mensaje Privado: Recibe Mensaje del Cliente y lo Envia a un Socket Destino
+	//Mensaje Privado: Recibe Mensaje del Cliente y lo Envia a un Socket Destino y al cliente que envia el mensaje
 	socket.on('eventoEnviarMensajePrivado', function (data) {
-		connectedSockets[data.idSocket].socket.emit('respuestaServer', data.message);
+		//Enviar al usuario destino
+		var currentSocket = getUserSocketByUserName(data.username);
+		console.log('currentSocket: ', currentSocket);
+		currentSocket.emit('respuestaServer', data.message);
+
+		//Enviar al usuario que envia el mensaje
 		socket.emit('respuestaServer', data.message);
 	});
 
-	//Recibe Conexión del Cliente
-	socket.on('nick', function (user) {
-		var newUser = { 
-			userName: user, 
-			idSocket : socket.id
-		};
-		users.push(newUser);
-		io.sockets.emit('nicks', users);
+	//Set userName property to Socket
+	socket.on('login', function (user) {
+		socket.set('username', user, function(err) {
+			socket.emit('respuestaServer', 'Ingresaste como: ' + user);
+			socket.broadcast.emit('respuestaServer', 'Usuario ' + user + ' se conectó');
+
+			//Emit all connected users
+			io.sockets.emit('nicks',  getConnectedUsers());
+		});
+	});
+
+	//Obtiene la lista de usuarios conectados
+	socket.on('nicks', function (user) {
+		io.sockets.emit('nicks',  getConnectedUsers());
 	});
 
 	//Force Disconnect
@@ -80,17 +83,55 @@ io.sockets.on('connection', function (socket) {
 
 	//Disconnect
 	socket.on('disconnect', function() {
-		delete connectedSockets[socket.id];
-		var auxUsers = users, index = 0;
-		auxUsers.forEach(function(user) {
-			if(user.idSocket == socket.id) {
-				users.splice(index, 1);
-			}
-			index++;
+		//Obtiene el nombre del socket que se esta desconectando
+		socket.get('username', function(err, username) {
+			//Emite mensaje a todos que el socket se esta desconectando
+			socket.broadcast.emit('respuestaServer', 'User ' + username + ' disconnected!!!');
+
+			//Obtiene lista de los sockets que quedan disponibles sin tener en cuenta el socket actual
+			var currentUsers = getConnectedUsersExcludingUser(username);
+
+			//Emite usuarios conectados a todos los sockets disponibles
+			io.sockets.emit('nicks', currentUsers);
+		});
+	});
+
+	function getConnectedUsers() {
+		var currentUsers = [];
+		io.sockets.clients().forEach(function (currentSocket) {
+			currentSocket.get('username', function(err, username) {
+		        currentUsers.push(username);
+		    });
 		});
 
-		io.sockets.emit('nicks', users);
-	});
+		return currentUsers;
+	}
+
+	function getConnectedUsersExcludingUser(username) {
+		var currentUsers = [];
+		io.sockets.clients().forEach(function (currentSocket) {
+			currentSocket.get('username', function(err, currentusername) {
+		        if(username != currentusername)
+			     	currentUsers.push(currentusername);
+		    });
+		});
+
+		return currentUsers;
+	}
+
+	function getUserSocketByUserName(username) {
+		var currentUserSocket;
+		io.sockets.clients().forEach(function (currentSocket) {
+			currentSocket.get('username', function(err, currentusername) {
+				if(username == currentusername) {
+					currentUserSocket = currentSocket;
+				}
+		    });
+		});
+
+		return currentUserSocket;
+	}
+
 });
 
 server.listen(3000);

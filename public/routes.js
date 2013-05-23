@@ -12,13 +12,13 @@ module.exports = function (app) {
 	res.render('index');
 	});*/
 	 
-	app.get('/welcome', function (req, res, next) {
+	/*app.get('/welcome', function (req, res, next) {
 		res.render('welcome');
 	});
 	 
 	app.get('/secure', function (req, res, next) {
 		res.render('secure');
-	});
+	});*/
 	 
 	app.get('/login', function (req, res, next) {
 		res.render('login', {
@@ -29,7 +29,9 @@ module.exports = function (app) {
 	 
 	app.post('/login', function (req, res, next) {
 	 
-		console.log('Ingresó a Login', req);
+		//console.log('Ingresó a Login', req.body);
+		console.log('user', req.body.username);
+		console.log('pass', req.body.password);
 		// you might like to do a database look-up or something more scalable here
 		if (req.body.username && req.body.username === 'user' && req.body.password && req.body.password === 'pass') {
 			req.session.authenticated = true;
