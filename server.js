@@ -12,8 +12,7 @@ swig.init({
 app.configure(function(){
 	app.use(express.bodyParser());
 	app.use(express.cookieParser());
-
-	app.use(express.session({ secret: 'example' }));
+	app.use(express.session({ secret: 'example', cookie: { maxAge: 1200000 } }));
 	app.use(checkAuthentication);
 	app.use(app.router);
 
@@ -27,12 +26,11 @@ require('./public/routes.js')(app);
 
 //Verify Authentication
 function checkAuthentication (req, res, next) {
-
 	if (req.url !== '/login' && (!req.session || !req.session.authenticated)) {
 		res.redirect('/login');
 		return;
 	}
-	 
+
 	next();
 }
 
@@ -52,9 +50,9 @@ io.sockets.on('connection', function (socket) {
 	//Mensaje Privado: Recibe Mensaje del Cliente y lo Envia a un Socket Destino y al cliente que envia el mensaje
 	socket.on('eventoEnviarMensajePrivado', function (data) {
 		//Enviar al usuario destino
-		var currentSocket = getUserSocketByUserName(data.username);
-		console.log('currentSocket: ', currentSocket);
-		currentSocket.emit('respuestaServer', data.message);
+		getUserSocketByUserName(data.username, function(currentSocket) {
+			currentSocket.emit('respuestaServer', data.message);
+		});
 
 		//Enviar al usuario que envia el mensaje
 		socket.emit('respuestaServer', data.message);
@@ -89,10 +87,10 @@ io.sockets.on('connection', function (socket) {
 			socket.broadcast.emit('respuestaServer', 'User ' + username + ' disconnected!!!');
 
 			//Obtiene lista de los sockets que quedan disponibles sin tener en cuenta el socket actual
-			var currentUsers = getConnectedUsersExcludingUser(username);
-
-			//Emite usuarios conectados a todos los sockets disponibles
-			io.sockets.emit('nicks', currentUsers);
+			getConnectedUsersExcludingUser(username, function(currentUsers) {
+				//Emite usuarios conectados a todos los sockets disponibles
+				io.sockets.emit('nicks', currentUsers);
+			});
 		});
 	});
 
@@ -107,7 +105,7 @@ io.sockets.on('connection', function (socket) {
 		return currentUsers;
 	}
 
-	function getConnectedUsersExcludingUser(username) {
+	function getConnectedUsersExcludingUser(username, callback) {
 		var currentUsers = [];
 		io.sockets.clients().forEach(function (currentSocket) {
 			currentSocket.get('username', function(err, currentusername) {
@@ -116,10 +114,10 @@ io.sockets.on('connection', function (socket) {
 		    });
 		});
 
-		return currentUsers;
+		callback(currentUsers);
 	}
 
-	function getUserSocketByUserName(username) {
+	function getUserSocketByUserName(username, callback) {
 		var currentUserSocket;
 		io.sockets.clients().forEach(function (currentSocket) {
 			currentSocket.get('username', function(err, currentusername) {
@@ -129,7 +127,7 @@ io.sockets.on('connection', function (socket) {
 		    });
 		});
 
-		return currentUserSocket;
+		callback(currentUserSocket);
 	}
 
 });
